@@ -58,14 +58,14 @@ def main():
     p99_ts = query_range(p99_q, run_start, run_end, step)
     pod_ts = query_range(pod_q, run_start, run_end, step)
 
-    export_timeseries(rate_ts, "rate_light_api.csv")
-    export_timeseries(p99_ts, "p99_light_api.csv")
-    export_timeseries(pod_ts, "pods_light_api.csv")
+    export_timeseries(rate_ts, "rate_light_api_bursty.csv")
+    export_timeseries(p99_ts, "p99_light_api_bursty.csv")
+    export_timeseries(pod_ts, "pods_light_api_bursty.csv")
 
     # Cold starts as scalar
     cold_res = query_instant(cold_q, run_end)
     cold_count = export_scalar(cold_res)
-    with open("cold_starts_light_api.csv", "w", newline="") as f:
+    with open("cold_starts_light_api_bursty.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["run_start", "run_end", "cold_starts"])
         writer.writerow([run_start, run_end, cold_count])
