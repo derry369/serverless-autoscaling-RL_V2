@@ -1,0 +1,21 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: image-resize
+  namespace: default
+  labels:
+    app: image-resize
+spec:
+  template:
+    metadata:
+      labels:
+        app: image-resize
+    spec:
+      containers:
+        - image: derry369/image-resize:phase2-coldstart
+          name: image-resize
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SERVICE_NAME
+              value: "image-resize"

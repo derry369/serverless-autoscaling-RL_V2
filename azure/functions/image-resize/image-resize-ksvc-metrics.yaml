@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-resize-metrics
+  namespace: default
+  labels:
+    app: image-resize
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    serving.knative.dev/service: image-resize
+  ports:
+    - name: http-metrics
+      port: 8080
+      targetPort: 8080
