@@ -1,4 +1,0 @@
-fastapi
-uvicorn[standard]
-Pillow
-prometheus_client
