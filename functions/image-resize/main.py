@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Response
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from fastapi import FastAPI, Response, Request
+from prometheus_client import Histogram, Counter, generate_latest, CONTENT_TYPE_LATEST
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
-
+import time
 
 app = FastAPI()
 
@@ -12,8 +12,30 @@ IMAGE_RESIZE_COLD_STARTS = Counter(
     "Cold starts for image-resize pods"
 )
 
+IMAGE_RESIZE_REQUEST_DURATION = Histogram(
+    "image_resize_request_duration_seconds",
+    "Request duration for image-resize",
+    ["method", "handler"],
+)
+
 IMAGE_RESIZE_COLD_STARTS.inc()
 
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    # Avoid counting /metrics itself
+    if request.url.path == "/metrics":
+        return await call_next(request)
+
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = time.perf_counter() - start
+
+    IMAGE_RESIZE_REQUEST_DURATION.labels(
+        method=request.method.lower(),
+        handler=request.url.path,
+    ).observe(elapsed)
+
+    return response
 
 def create_sample_image():
     # Generate a simple in-memory RGB image (e.g. 400x400 red square)

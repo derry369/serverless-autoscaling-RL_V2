@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Response
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from fastapi import FastAPI, Response, Request
+from prometheus_client import Histogram, Counter, generate_latest, CONTENT_TYPE_LATEST
 from datetime import datetime
 import pandas as pd
 import numpy as np
-
+import time
 
 app = FastAPI()
 
@@ -12,9 +12,31 @@ DATA_PROCESSOR_COLD_STARTS = Counter(
     "Cold starts for data-processor pods"
 )
 
+DATA_PROCESSOR_REQUEST_DURATION = Histogram(
+    "data_processor_request_duration_seconds",
+    "Request duration for data-processor",
+    ["method", "handler"],
+)
+
 # Increment once per pod start
 DATA_PROCESSOR_COLD_STARTS.inc()
 
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    # Skip /metrics so it doesn't skew latency stats
+    if request.url.path == "/metrics":
+        return await call_next(request)
+
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = time.perf_counter() - start
+
+    DATA_PROCESSOR_REQUEST_DURATION.labels(
+        method=request.method.lower(),
+        handler=request.url.path,
+    ).observe(elapsed)
+
+    return response
 
 @app.get("/")
 def process_data():

@@ -12,7 +12,7 @@ spec:
         app: ml-inference
     spec:
       containers:
-        - image: derry369/ml-inference:phase2-coldstart
+        - image: derry369/ml-inference:phase2-import
           name: ml-inference
           ports:
             - containerPort: 8080

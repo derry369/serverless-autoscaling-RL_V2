@@ -1,6 +1,8 @@
-from fastapi import FastAPI, Response
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, Response
+from prometheus_client import Histogram, Counter, generate_latest, CONTENT_TYPE_LATEST
 from datetime import datetime
+import time
 import torch
 import torch.nn as nn
 
@@ -10,6 +12,13 @@ app = FastAPI()
 ML_INFERENCE_COLD_STARTS = Counter(
     "ml_inference_cold_starts_total",
     "Cold starts for ml-inference pods"
+)
+
+# Histogram for request duration
+ML_INFERENCE_REQUEST_DURATION = Histogram(
+    "ml_inference_request_duration_seconds",
+    "Request duration for ml-inference",
+    ["method", "handler"]
 )
 
 ML_INFERENCE_COLD_STARTS.inc()
@@ -31,6 +40,17 @@ class TinyNet(nn.Module):
 # Load model at startup (cold-start cost)
 model = TinyNet()
 model.eval()
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = time.perf_counter() - start
+    ML_INFERENCE_REQUEST_DURATION.labels(
+        method=request.method.lower(),
+        handler=request.url.path,
+    ).observe(elapsed)
+    return response
 
 
 @app.get("/")

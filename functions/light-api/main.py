@@ -16,20 +16,26 @@ COLD_STARTS = Counter(
 COLD_STARTS.inc()
 
 REQUEST_LATENCY = Histogram(
-    "http_request_duration_seconds",
-    "Duration of HTTP requests in seconds",
-    ["method", "handler"]
+    "light_api_request_duration_seconds",
+    "Request duration for light-api",
+    ["method", "handler"],
 )
 
 @app.middleware("http")
 async def prometheus_middleware(request: Request, call_next):
+    # Skip /metrics so scrape traffic doesn’t skew latency
+    if request.url.path == "/metrics":
+        return await call_next(request)
+
     start = time.perf_counter()
     response = await call_next(request)
     elapsed = time.perf_counter() - start
+
     REQUEST_LATENCY.labels(
         method=request.method.lower(),
         handler=request.url.path,
     ).observe(elapsed)
+
     return response
 
 @app.get("/")

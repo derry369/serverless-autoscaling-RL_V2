@@ -12,7 +12,7 @@ spec:
         app: light-api
     spec:
       containers:
-        - image: derry369/light-api:phase2-coldstart
+        - image: derry369/light-api:phase2-histogramV2
           name: light-api
           ports:
             - containerPort: 8080

@@ -12,7 +12,7 @@ spec:
         app: image-resize
     spec:
       containers:
-        - image: derry369/image-resize:phase2-coldstart
+        - image: derry369/image-resize:phase2-histogram
           name: image-resize
           ports:
             - containerPort: 8080
